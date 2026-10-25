@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - chore(deps): bump minreq from 2.11.0 to 3
+- ci(msrv)!: bump Rust MSRV from 1.63.0 to 1.80.0, required by the `minreq` version 3 rustls backend used by all blocking-https* features. If not using these features the library remain compatible with Rust 1.63.0.
 
 ## [v0.12.3]
 
