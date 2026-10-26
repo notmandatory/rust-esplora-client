@@ -43,7 +43,9 @@ use bitcoin::hashes::{sha256, Hash};
 use bitcoin::hex::{DisplayHex, FromHex};
 use bitcoin::{Address, Amount, Block, BlockHash, FeeRate, MerkleBlock, Script, Transaction, Txid};
 
-use bitreq::{Client, Method, Proxy, Request, RequestExt, Response};
+#[cfg(not(target_arch = "wasm32"))]
+use bitreq::{Client, Proxy, RequestExt};
+use bitreq::{Method, Request, Response};
 
 use crate::{
     is_retryable, is_success, sat_per_vbyte_to_feerate, AddressStats, BlockInfo, BlockStatus,
@@ -75,6 +77,7 @@ pub struct AsyncClient<S = DefaultSleeper> {
     /// The URL of the proxy host.
     ///
     /// NOTE: The proxy is ignored when targeting `wasm32`.
+    #[cfg(not(target_arch = "wasm32"))]
     proxy: Option<String>,
     /// Per-request socket timeout.
     timeout: Option<Duration>,
@@ -83,6 +86,7 @@ pub struct AsyncClient<S = DefaultSleeper> {
     /// Maximum number of retry attempts for retryable responses.
     max_retries: usize,
     /// The inner [`bitreq::Client`] HTTP client to cache connections.
+    #[cfg(not(target_arch = "wasm32"))]
     client: Client,
     /// Marker for the sleeper implementation.
     marker: PhantomData<S>,
@@ -102,10 +106,12 @@ impl<S: Sleeper> AsyncClient<S> {
     pub fn from_builder(builder: Builder) -> Result<Self, Error> {
         Ok(AsyncClient {
             url: builder.base_url,
+            #[cfg(not(target_arch = "wasm32"))]
             proxy: builder.proxy,
             timeout: builder.timeout,
             headers: builder.headers,
             max_retries: builder.max_retries,
+            #[cfg(not(target_arch = "wasm32"))]
             client: Client::new(builder.max_connections),
             marker: PhantomData,
         })
@@ -122,6 +128,7 @@ impl<S: Sleeper> AsyncClient<S> {
     ///
     /// This can be useful for callers that need access to shared connection
     /// state managed by the HTTP client.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn client(&self) -> &Client {
         &self.client
     }
@@ -138,7 +145,6 @@ impl<S: Sleeper> AsyncClient<S> {
             request = request.with_proxy(Proxy::new_http(proxy)?);
         }
 
-        #[cfg(not(target_arch = "wasm32"))]
         if let Some(timeout) = self.timeout {
             request = request.with_timeout(timeout);
         }
@@ -156,10 +162,17 @@ impl<S: Sleeper> AsyncClient<S> {
         let mut delay = BASE_BACKOFF_MILLIS;
         let mut attempts = 0;
 
-        let request = self.build_request(Method::Get, path)?.with_pipelining();
+        let request = self.build_request(Method::Get, path)?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let request = request.with_pipelining();
 
         loop {
-            match request.clone().send_async_with_client(&self.client).await? {
+            #[cfg(not(target_arch = "wasm32"))]
+            let response = request.clone().send_async_with_client(&self.client).await;
+            #[cfg(target_arch = "wasm32")]
+            let response = request.clone().send_async().await;
+
+            match response? {
                 response if attempts < self.max_retries && is_retryable(&response) => {
                     S::sleep(delay).await;
                     attempts += 1;
@@ -324,7 +337,10 @@ impl<S: Sleeper> AsyncClient<S> {
             request = request.with_param(key, value);
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
         let response = request.send_async_with_client(&self.client).await?;
+        #[cfg(target_arch = "wasm32")]
+        let response = request.send_async().await?;
 
         if !is_success(&response) {
             let status = u16::try_from(response.status_code).map_err(Error::StatusCode)?;
@@ -746,7 +762,7 @@ pub trait Sleeper: 'static {
 #[derive(Debug, Clone, Copy)]
 pub struct DefaultSleeper;
 
-#[cfg(any(test, feature = "tokio"))]
+#[cfg(all(any(test, feature = "tokio"), not(target_arch = "wasm32")))]
 impl Sleeper for DefaultSleeper {
     type Sleep = tokio::time::Sleep;
 

@@ -306,7 +306,7 @@ impl Builder {
     /// # Errors
     ///
     /// Returns an [`Error`] if the async HTTP client cannot be constructed.
-    #[cfg(all(feature = "async", feature = "tokio"))]
+    #[cfg(all(feature = "async", feature = "tokio", not(target_arch = "wasm32")))]
     pub fn build_async(self) -> Result<AsyncClient, Error> {
         AsyncClient::from_builder(self)
     }
