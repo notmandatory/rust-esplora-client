@@ -54,9 +54,12 @@ jobs:
             - name: Install WASM target
               run: rustup target add wasm32-unknown-unknown
 
-            # NOTE: this requires the patched bitreq checkout at
-            # ../../rust-bitcoin/corepc/bitreq until a bitreq release includes
-            # the `wasm` feature.
+            # NOTE: Cargo.toml points `bitreq` at the WASM branch of this
+            # checkout. Replace this step with a released bitreq once the
+            # `wasm` feature is available on crates.io.
+            - name: Checkout patched bitreq
+              run: git clone --depth 1 --branch corepc/wasm https://git.rust-bitcoin.org/notmandatory/corepc.git ../../rust-bitcoin/corepc
+
             - name: Check WASM build
               run: cargo check --target wasm32-unknown-unknown --no-default-features --features wasm
 
