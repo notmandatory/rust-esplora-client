@@ -100,7 +100,7 @@ impl<S: Sleeper> AsyncClient<S> {
     ///
     /// Configures the request with the proxy, timeout, and headers specified
     /// in the [`Builder`]. On native targets this also configures the
-    /// underlying [`bitreq::Client`] connection pool; WASM targets do not have
+    /// underlying `bitreq::Client` connection pool; WASM targets do not have
     /// a connection pool. No network request is made until a client method is
     /// awaited.
     ///
@@ -761,7 +761,7 @@ pub trait Sleeper: 'static {
     fn sleep(dur: Duration) -> Self::Sleep;
 }
 
-/// The default [`Sleeper`] implementation, backed by [`tokio::time::sleep`].
+/// The default [`Sleeper`] implementation, backed by `tokio::time::sleep`.
 ///
 /// This type is available when the `tokio` feature is enabled or while running
 /// tests on native targets. It is not implemented on `wasm32`; WASM callers

@@ -39,6 +39,30 @@ jobs:
             - name: ${{ matrix.name }}
               run: cargo rbmt ${{ matrix.task }}
 
+    wasm:
+        name: Check - WASM
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup Build Cache
+              uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+            - name: Install WASM target
+              run: rustup target add wasm32-unknown-unknown
+
+            # NOTE: this requires the patched bitreq checkout at
+            # ../../rust-bitcoin/corepc/bitreq until a bitreq release includes
+            # the `wasm` feature.
+            - name: Check WASM build
+              run: cargo check --target wasm32-unknown-unknown --no-default-features --features wasm
+
+            - name: Check WASM build with default features
+              run: cargo check --target wasm32-unknown-unknown --features wasm
+
     test:
         name: Test - ${{ matrix.name }}
         runs-on: ubuntu-latest

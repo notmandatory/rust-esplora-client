@@ -18,7 +18,7 @@
 //! feature is enabled; custom runtimes can supply their own `Sleeper`.
 //!
 //! On `wasm32-unknown-unknown`, enable the `wasm` feature to use the browser
-//! Fetch API transport. Only [`AsyncClient`] is available: [`BlockingClient`]
+//! Fetch API transport. Only [`AsyncClient`] is available: `BlockingClient`
 //! is compiled out, proxies and connection pooling are ignored, and WASM
 //! callers must supply their own [`Sleeper`] to retry with backoff.
 //!
@@ -87,7 +87,7 @@
 //!   (SSL) using the `rustls` TLS backend.
 //! * `async-https-rustls-probe` enables [`bitreq`], the async client with support for proxying and
 //!   TLS (SSL) using `rustls` and probed system roots.
-//! * `tokio` enables the default async sleeper used by [`Builder::build_async`].
+//! * `tokio` enables the default async sleeper used by `Builder::build_async`.
 //! * `wasm` enables the browser Fetch API transport and the async client on
 //!   `wasm32-unknown-unknown`.
 //!
