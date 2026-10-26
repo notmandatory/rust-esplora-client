@@ -62,7 +62,10 @@ use crate::{
 /// mempool endpoints.
 ///
 /// The generic parameter `S` determines the asynchronous runtime used for
-/// sleeping between retries. Defaults to the Tokio-backed [`DefaultSleeper`].
+/// sleeping between retries. On native targets it defaults to the Tokio-backed
+/// [`DefaultSleeper`]. On `wasm32`, use
+/// [`Builder::build_async_with_sleeper`](crate::Builder::build_async_with_sleeper)
+/// with a custom [`Sleeper`].
 ///
 /// # Retries
 ///
@@ -95,9 +98,11 @@ pub struct AsyncClient<S = DefaultSleeper> {
 impl<S: Sleeper> AsyncClient<S> {
     /// Build an [`AsyncClient`] from a [`Builder`].
     ///
-    /// Configures the underlying [`bitreq::Client`] with
-    /// proxy, timeout, and headers specified in the [`Builder`].
-    /// No network request is made until a client method is awaited.
+    /// Configures the request with the proxy, timeout, and headers specified
+    /// in the [`Builder`]. On native targets this also configures the
+    /// underlying [`bitreq::Client`] connection pool; WASM targets do not have
+    /// a connection pool. No network request is made until a client method is
+    /// awaited.
     ///
     /// # Errors
     ///
@@ -746,8 +751,9 @@ impl<S: Sleeper> AsyncClient<S> {
 /// [`AsyncClient`] uses this trait to wait between retry attempts without
 /// committing the client type to a specific async runtime.
 ///
-/// The only provided implementation is [`DefaultSleeper`], which is backed by Tokio.
-/// Custom implementations can be provided to support other runtimes.
+/// The only provided implementation is [`DefaultSleeper`], which is backed by
+/// Tokio and is not available on `wasm32`. Custom implementations can be
+/// provided to support other runtimes, including WASM.
 pub trait Sleeper: 'static {
     /// The [`Future`](std::future::Future) type returned by [`Sleeper::sleep`].
     type Sleep: std::future::Future<Output = ()>;
@@ -758,7 +764,8 @@ pub trait Sleeper: 'static {
 /// The default [`Sleeper`] implementation, backed by [`tokio::time::sleep`].
 ///
 /// This type is available when the `tokio` feature is enabled or while running
-/// tests.
+/// tests on native targets. It is not implemented on `wasm32`; WASM callers
+/// must supply their own [`Sleeper`].
 #[derive(Debug, Clone, Copy)]
 pub struct DefaultSleeper;
 
