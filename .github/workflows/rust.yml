@@ -43,7 +43,7 @@ jobs:
               run: cargo rbmt ${{ matrix.task }}
 
     wasm:
-        name: Check - WASM
+        name: WASM
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repository
@@ -65,6 +65,23 @@ jobs:
 
             - name: Check WASM build with default features
               run: cargo check --target wasm32-unknown-unknown --features wasm
+
+            - name: Check WASM test formatting
+              working-directory: tests/wasm
+              run: cargo fmt --check
+
+            - name: Install wasm-pack
+              run: cargo install --locked wasm-pack --version 0.15.0
+
+            - name: Run WASM tests
+              working-directory: tests/wasm
+              run: |
+                  url_file=$(mktemp)
+                  cargo run --locked --bin fixture -- --url-file "$url_file" &
+                  fixture_pid=$!
+                  trap 'kill "$fixture_pid"' EXIT
+                  while ! test -s "$url_file"; do sleep 0.1; done
+                  ESPLORA_WASM_TEST_URL=$(cat "$url_file") wasm-pack test --node --locked
 
     test:
         name: Test - ${{ matrix.name }}
