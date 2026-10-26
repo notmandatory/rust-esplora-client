@@ -101,13 +101,13 @@ pub use r#async::Sleeper;
 pub mod api;
 #[cfg(feature = "async")]
 pub mod r#async;
-#[cfg(feature = "blocking")]
+#[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
 pub mod blocking;
 
 pub use api::*;
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 use bitreq::Response;
-#[cfg(feature = "blocking")]
+#[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
 pub use blocking::BlockingClient;
 #[cfg(feature = "async")]
 pub use r#async::AsyncClient;
@@ -120,7 +120,7 @@ pub const RETRYABLE_ERROR_CODES: [u16; 3] = [
 ];
 
 /// Base delay used by the exponential retry backoff.
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 const BASE_BACKOFF_MILLIS: Duration = Duration::from_millis(256);
 
 /// Default maximum number of retry attempts per request.
@@ -132,40 +132,40 @@ const DEFAULT_MAX_CONNECTIONS: usize = 10;
 
 /// Check if the [`Response`] status code is informational (100-199).
 #[allow(unused)]
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 fn is_informational(response: &Response) -> bool {
     (100..200).contains(&response.status_code)
 }
 
 /// Check if the [`Response`] status code is successful (200-299).
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 fn is_success(response: &Response) -> bool {
     (200..300).contains(&response.status_code)
 }
 
 /// Check if the [`Response`] status code is a redirection (300-399).
 #[allow(unused)]
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 fn is_redirection(response: &Response) -> bool {
     (300..400).contains(&response.status_code)
 }
 
 /// Check if the [`Response`] status code is a client error (400-499).
 #[allow(unused)]
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 fn is_client_error(response: &Response) -> bool {
     (400..500).contains(&response.status_code)
 }
 
 /// Check if the [`Response`] status code is a server error (500-599).
 #[allow(unused)]
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 fn is_server_error(response: &Response) -> bool {
     (500..600).contains(&response.status_code)
 }
 
 /// Check if the [`Response`] status code is retryable (429, 500, 503).
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 fn is_retryable(response: &Response) -> bool {
     RETRYABLE_ERROR_CODES.contains(&(response.status_code as u16))
 }
@@ -202,7 +202,7 @@ pub fn sat_per_vbyte_to_feerate(estimates: HashMap<u16, f64>) -> HashMap<u16, Fe
 /// ```no_run
 /// use std::time::Duration;
 ///
-/// # #[cfg(feature = "blocking")]
+/// # #[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
 /// # {
 /// let client = esplora_client::Builder::new("https://mempool.space/testnet/api")
 ///     .timeout(Duration::from_secs(30))
@@ -294,7 +294,7 @@ impl Builder {
     }
 
     /// Build a [`BlockingClient`] from this configuration.
-    #[cfg(feature = "blocking")]
+    #[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
     pub fn build_blocking(self) -> BlockingClient {
         BlockingClient::from_builder(self)
     }
@@ -329,7 +329,7 @@ impl Builder {
 #[derive(Debug)]
 pub enum Error {
     /// Error during a [`bitreq`] HTTP request.
-    #[cfg(any(feature = "blocking", feature = "async"))]
+    #[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
     BitReq(bitreq::Error),
     /// Error during JSON serialization or deserialization.
     SerdeJson(serde_json::Error),
@@ -367,7 +367,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            #[cfg(any(feature = "blocking", feature = "async"))]
+            #[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
             Error::BitReq(e) => write!(f, "Bitreq HTTP error: {e}"),
             Error::SerdeJson(e) => write!(f, "JSON (de)serialization error: {e}"),
             Error::HttpResponse { status, message } => {
@@ -413,7 +413,7 @@ macro_rules! impl_error {
     };
 }
 
-#[cfg(any(feature = "blocking", feature = "async"))]
+#[cfg(any(all(feature = "blocking", not(target_arch = "wasm32")), feature = "async"))]
 impl_error!(::bitreq::Error, BitReq, Error);
 impl_error!(serde_json::Error, SerdeJson, Error);
 impl_error!(std::num::ParseIntError, Parsing, Error);
