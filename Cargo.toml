@@ -14,6 +14,7 @@ description = "Asynchronous and blocking clients and types for interacting with 
 keywords = ["bitcoin", "esplora"]
 readme = "README.md"
 rust-version = "1.75.0" # MSRV
+exclude = ["tests/wasm"]
 
 [lib]
 name = "esplora_client"

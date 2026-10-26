@@ -7,6 +7,7 @@
 * feat(wasm): add a `wasm` feature and browser Fetch API transport support for
   `AsyncClient` on `wasm32-unknown-unknown`
 * feat(wasm): support WASM timeouts through the `bitreq` transport handler
+* feat(test): add WASM smoke tests for `AsyncClient` against local Esplora fixtures
 
 ### Changed
 
