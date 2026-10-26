@@ -1,4 +1,4 @@
-//! Local Esplora HTTP fixtures for the browser-WASM smoke tests.
+//! Local Esplora HTTP fixtures for the WASM smoke tests.
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {

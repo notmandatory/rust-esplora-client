@@ -1,7 +1,7 @@
 # esplora-client WASM smoke test
 
 This standalone workspace exercises `AsyncClient` on
-`wasm32-unknown-unknown` with the browser Fetch transport, using
+`wasm32-unknown-unknown` with the Fetch API transport, using
 `wasm-bindgen-test` under Node. It runs against deterministic local HTTP
 fixtures and makes no external network requests.
 
