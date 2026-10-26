@@ -30,6 +30,9 @@ jobs:
               with:
                   persist-credentials: false
 
+            - name: Checkout patched bitreq
+              uses: ./.github/actions/checkout-bitreq
+
             - name: Setup Build Cache
               uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
@@ -48,17 +51,14 @@ jobs:
               with:
                   persist-credentials: false
 
+            - name: Checkout patched bitreq
+              uses: ./.github/actions/checkout-bitreq
+
             - name: Setup Build Cache
               uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
             - name: Install WASM target
               run: rustup target add wasm32-unknown-unknown
-
-            # NOTE: Cargo.toml points `bitreq` at the WASM branch of this
-            # checkout. Replace this step with a released bitreq once the
-            # `wasm` feature is available on crates.io.
-            - name: Checkout patched bitreq
-              run: git clone --depth 1 --branch corepc/wasm https://git.rust-bitcoin.org/notmandatory/corepc.git ../../rust-bitcoin/corepc
 
             - name: Check WASM build
               run: cargo check --target wasm32-unknown-unknown --no-default-features --features wasm
@@ -85,6 +85,9 @@ jobs:
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
+
+            - name: Checkout patched bitreq
+              uses: ./.github/actions/checkout-bitreq
 
             - name: Setup Build Cache
               uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
