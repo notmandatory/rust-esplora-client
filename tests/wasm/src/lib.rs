@@ -4,7 +4,12 @@ use core::future::Ready;
 use core::time::Duration;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use esplora_client::{Builder, Sleeper};
+use esplora_client::absolute::LockTime;
+use esplora_client::transaction::Version;
+use esplora_client::{
+    Amount, Builder, Error, OutPoint, ScriptBuf, Sequence, Sleeper, Transaction, TxIn, TxOut,
+    Witness,
+};
 use wasm_bindgen_test::wasm_bindgen_test;
 
 fn base_url() -> &'static str {
@@ -71,6 +76,62 @@ async fn retries_retryable_response() {
         101
     );
     assert_eq!(SLEEPS.load(Ordering::SeqCst), 1);
+}
+
+/// Minimum viable transaction; the fixture only checks the body is hex.
+fn test_transaction() -> Transaction {
+    Transaction {
+        version: Version::TWO,
+        lock_time: LockTime::ZERO,
+        input: vec![TxIn {
+            previous_output: OutPoint::null(),
+            script_sig: ScriptBuf::new(),
+            sequence: Sequence::MAX,
+            witness: Witness::new(),
+        }],
+        output: vec![TxOut {
+            value: Amount::from_sat(1000),
+            script_pubkey: ScriptBuf::new(),
+        }],
+    }
+}
+
+#[wasm_bindgen_test(async)]
+async fn broadcasts_transaction() {
+    let client = Builder::new(base_url())
+        .build_async_with_sleeper::<NoopSleeper>()
+        .expect("build client");
+
+    let txid = client
+        .broadcast(&test_transaction())
+        .await
+        .expect("broadcast");
+    assert_eq!(
+        txid.to_string(),
+        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+    );
+}
+
+#[wasm_bindgen_test(async)]
+async fn surfaces_non_retryable_response_without_retry() {
+    SLEEPS.store(0, Ordering::SeqCst);
+
+    let url = format!("{}/no-such-endpoint", base_url());
+    let client = Builder::new(&url)
+        .max_retries(2)
+        .build_async_with_sleeper::<CountingSleeper>()
+        .expect("build client");
+
+    match client.get_height().await {
+        Err(Error::HttpResponse {
+            status: 404,
+            message,
+        }) => {
+            assert_eq!(message, "not found");
+        }
+        other => panic!("expected 404 `Error::HttpResponse`, got {other:?}"),
+    }
+    assert_eq!(SLEEPS.load(Ordering::SeqCst), 0);
 }
 
 #[wasm_bindgen_test(async)]

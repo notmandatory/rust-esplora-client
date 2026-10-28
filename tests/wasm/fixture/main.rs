@@ -40,6 +40,22 @@ fn main() {
         match (method, path) {
             (Method::Get, "/blocks/tip/height") => respond(request, 200, "101"),
             (Method::Get, "/fee-estimates") => respond(request, 200, r#"{"1":1.5,"2":2.5}"#),
+            (Method::Post, "/tx") => {
+                let mut request = request;
+                let mut body = String::new();
+                let is_hex_tx = request.as_reader().read_to_string(&mut body).is_ok()
+                    && !body.is_empty()
+                    && body.bytes().all(|b| b.is_ascii_hexdigit());
+                if is_hex_tx {
+                    respond(
+                        request,
+                        200,
+                        "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
+                    );
+                } else {
+                    respond(request, 400, "expected a hex-encoded transaction body");
+                }
+            }
             (Method::Get, "/flaky/blocks/tip/height") => {
                 if flaky.fetch_add(1, Ordering::SeqCst) == 0 {
                     respond(request, 503, "retry");
